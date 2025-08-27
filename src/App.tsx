@@ -1,7 +1,7 @@
 import { createMemo, createSignal, For, Show, untrack } from "solid-js";
 import Input from "./Input";
 import availableOptions, { VARIABLE_OPTIONS, defauts } from "./options";
-import { createStore, type Part } from "solid-js/store";
+import { createStore } from "solid-js/store";
 
 export default function App() {
   const [date, setDate] = createSignal<Date>(new Date());
