@@ -1,16 +1,9 @@
-import {
-  createEffect,
-  createMemo,
-  createSignal,
-  For,
-  Show,
-  untrack,
-} from "solid-js";
+import { createMemo, createSignal, For, Show, untrack } from "solid-js";
 import Input from "./Input";
 import availableOptions, { VARIABLE_OPTIONS, defauts } from "./options";
 import { createStore, type Part } from "solid-js/store";
 
-function App() {
+export default function App() {
   const [date, setDate] = createSignal<Date>(new Date());
 
   const defaultLocale = navigator.languages[0];
@@ -24,14 +17,8 @@ function App() {
       Object.entries(options).map(([key, option]) => [key, option.selected])
     )
   );
-  const formatter = () => Intl.DateTimeFormat(locale(), formatOptions());
 
-  createEffect(() => {
-    console.debug("Options is", {
-      day: options.day.selected,
-      dateStyle: options.dateStyle.selected,
-    });
-  });
+  const formatter = () => Intl.DateTimeFormat(locale(), formatOptions());
 
   const formatted = () => {
     const value = date();
@@ -52,21 +39,34 @@ function App() {
 
     if (input.name === "locale" || input.name === "defaults") return;
 
-    const key = input.name as Part<typeof options>;
-    let value: string | boolean | undefined = input.value;
+    const key = input.name as keyof typeof options;
+    let value: string | boolean | undefined | 1 | 2 | 3 = input.value;
     if (value === "undefined") value = undefined;
     else if (value === "true") value = true;
     else if (value === "false") value = false;
+    else if (key === "fractionalSecondDigits")
+      value = parseInt(value) as 1 | 2 | 3;
 
     switch (key) {
       case "dateStyle":
       case "timeStyle":
         setOptions(
-          ["year", "month", "day", "hour", "minute", "second"],
+          [
+            "year",
+            "month",
+            "day",
+            "hour",
+            "minute",
+            "second",
+            "dayPeriod",
+            "fractionalSecondDigits",
+          ],
           "selected",
           undefined
         );
         break;
+      case "fractionalSecondDigits":
+      case "dayPeriod":
       case "day":
       case "month":
       case "year":
@@ -76,7 +76,16 @@ function App() {
         setOptions(["dateStyle", "timeStyle"], "selected", undefined);
         break;
     }
-    setOptions(key, "selected", value);
+
+    const oldValue = options[key].selected;
+
+    console.debug("Validating");
+    try {
+      setOptions(key, "selected", value);
+    } catch (error) {
+      console.debug("Invalid value", error);
+      setOptions(key, "selected", oldValue);
+    }
   }
 
   const json = () =>
@@ -139,8 +148,8 @@ function App() {
   return (
     <>
       <header class="fixed top-0 left-1/2 -translate-x-1/2 w-max text-center mx-auto bg-gray-50 dark:bg-gray-800 px-8 py-4 shadow rounded-b-2xl font-mono">
-        <h1 class="sr-only">Intl.DateTimeFormat playground</h1>
-        <p class="bg-gray-950 text-gray-50 dark:bg-gray-50 dark:text-gray-950">
+        <h1>Intl.DateTimeFormat playground</h1>
+        <p class="bg-gray-950 text-gray-50 dark:bg-gray-50 dark:text-gray-950 px-1">
           <span class="sr-only">Current formatted time</span>
           {formatted()}
         </p>
@@ -159,7 +168,7 @@ function App() {
       >
         <label>
           <label for="locale" class="font-bold text-xl">
-            Locale
+            locale
           </label>
           <Input
             type="text"
@@ -183,6 +192,7 @@ function App() {
                         type="text"
                         list={`${key}-options`}
                         id={key}
+                        name={key}
                         value={option.selected?.toString()}
                         class="mt-2 font-normal max-w-48"
                       />
@@ -200,19 +210,24 @@ function App() {
                 <fieldset>
                   <legend class="font-bold text-xl">{key}</legend>
                   <For each={option.options}>
-                    {(value) => (
-                      <label class="block text-gray-800 dark:text-gray-200">
-                        <input
-                          type="radio"
-                          name={key}
-                          value={String(value)}
-                          checked={value === option.selected}
-                        />
-                        <span class="ms-2">
-                          {value === undefined ? "undefined" : value.toString()}
-                        </span>
-                      </label>
-                    )}
+                    {(value) => {
+                      const asString = String(value);
+                      return (
+                        <label class="block text-gray-800 dark:text-gray-200">
+                          <input
+                            type="radio"
+                            name={key}
+                            value={asString}
+                            checked={asString === String(option.selected)}
+                          />
+                          <span class="ms-2">
+                            {value === undefined
+                              ? "undefined"
+                              : value.toString()}
+                          </span>
+                        </label>
+                      );
+                    }}
                   </For>
                 </fieldset>
               </Show>
@@ -241,5 +256,3 @@ function App() {
     </>
   );
 }
-
-export default App;
