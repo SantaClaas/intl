@@ -95,6 +95,7 @@ function App() {
           },
       2
     );
+
   const codeSnippet = () => {
     const jsome = json();
     const withoutQuotes = jsome.replace(/"(\w+)":/g, "$1:");
@@ -230,7 +231,7 @@ function App() {
             <span class="ms-2">Include defaults</span>
           </label>
           <textarea
-            class="block w-max p-5 bg-gray-200 rounded-xl [field-sizing:content]"
+            class="block w-max p-5 bg-gray-200 dark:bg-gray-800 rounded-xl [field-sizing:content]"
             readOnly
           >
             {codeSnippet()}
